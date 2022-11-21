@@ -94,7 +94,7 @@ const getRoutes = async ({
         : null;
 
     if (routes && routes.routesInfos) {
-      console.log("Possible number of routes:", routes.routesInfos.length);
+      //console.log("Possible number of routes:", routes.routesInfos.length);
       console.log(
         "Best quote: ",
         new Decimal(routes.routesInfos[0].outAmount.toString())
@@ -150,13 +150,11 @@ const main = async () => {
       await fetch(TOKEN_LIST_URL["mainnet-beta"])
     ).json(); // Fetch token list from Jupiter API
 
-
     //  Load Jupiter
     const jupiter = await Jupiter.load({
       connection,
       cluster: "mainnet-beta",
       user: wallet, // or public key
-    
     });
 
     //  Get routeMap, which maps each tokenMint and their respective tokenMints that are swappable
@@ -166,7 +164,6 @@ const main = async () => {
     const inputToken = tokens.find((t) => t.symbol == inputSymbol); // USDC Mint Info
     const outputToken = tokens.find((t) => t.symbol == outputSymbol); // USDT Mint Info
 
- 
     const routes = await getRoutes({
       jupiter,
       inputToken,
@@ -174,12 +171,24 @@ const main = async () => {
       inputAmount: amount, // 1 unit in UI
       slippageBps: 100, // 1% slippage
     });
+    if (routes && routes.routesInfos.length > 0 && outputToken) {
+      let outputAmount: number = Number(
+        new Decimal(routes.routesInfos[0].outAmount.toString())
+          .div(10 ** outputToken.decimals)
+          .toString()
+      );
+      if (outputAmount > amount) {
+        console.log("Swap", outputAmount);
+        await executeSwap({ jupiter, routeInfo: routes!.routesInfos[0] });
+      }
+    }
 
     // Routes are sorted based on outputAmount, so ideally the first route is the best.
-    await executeSwap({ jupiter, routeInfo: routes!.routesInfos[0] });
   } catch (error) {
     console.log({ error });
   }
 };
 
-main();
+setInterval(() => {
+  main();
+}, 30 * 1000);

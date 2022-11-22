@@ -152,6 +152,7 @@ const main = async () => {
 
     //  Load Jupiter
     const jupiter = await Jupiter.load({
+      restrictIntermediateTokens: true,
       connection,
       cluster: "mainnet-beta",
       user: wallet, // or public key
